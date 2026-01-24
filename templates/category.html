@@ -29,7 +29,7 @@
                         <span class="arrow"></span>
                     </button>
                     <div class="dropdown-content">
-                        {% for child in categories.children[parent.id] %}
+                        {% for child in categories.children[parent.id|string] %}
                         <a href="/categoria/{{ parent.id }}?sub={{ child.id }}" 
                            {% if active_sub and active_sub.id == child.id %}class="active"{% endif %}>
                             {{ child.name }}
