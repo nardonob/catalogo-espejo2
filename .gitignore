@@ -1,32 +1,8 @@
-# Environment
 .env
-.env.local
-*.env
-
-# Python
 __pycache__/
 *.py[cod]
-*$py.class
-.Python
 venv/
-env/
-*.egg-info/
-
-# Data
 data/catalog.json
-
-# Images (generated)
 static/images/products/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Logs
 *.log

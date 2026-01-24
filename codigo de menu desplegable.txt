@@ -1,0 +1,340 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Contenedor principal del menú */
+    .category-menu-container {
+        width: 100%;
+        background-color: #ffffff;
+        border-bottom: 1px solid #e5e5e5;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .category-menu {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        gap: 0;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Cada item del menú */
+    .category-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    /* Botones principales - estilo Cartier */
+    .category-btn {
+        background-color: transparent;
+        border: none;
+        padding: 20px 28px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        font-weight: 500;
+        color: #333;
+        letter-spacing: 1px;
+        position: relative;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Línea inferior al hacer hover */
+    .category-btn::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 28px;
+        right: 28px;
+        height: 2px;
+        background-color: #333;
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .category-btn:hover::after {
+        transform: scaleX(1);
+    }
+
+    .category-btn:hover {
+        color: #000;
+    }
+
+    .category-btn.active::after {
+        transform: scaleX(1);
+    }
+
+    /* Botón "Todos los productos" destacado */
+    .all-products-btn {
+        background-color: #dddedc;
+        color: #000;
+        border-radius: 0;
+        margin-right: 20px;
+    }
+
+    .all-products-btn::after {
+        display: none;
+    }
+
+    .all-products-btn:hover {
+        background-color: #000;
+        color: #fff;
+    }
+
+    /* Flecha desplegable - estilo minimalista */
+    .arrow {
+        border: solid #333;
+        border-width: 0 1px 1px 0;
+        display: inline-block;
+        padding: 3px;
+        transform: rotate(45deg);
+        transition: transform 0.3s ease;
+        margin-left: 2px;
+    }
+
+    .category-btn:hover .arrow {
+        border-color: #000;
+    }
+
+    .category-btn.active .arrow {
+        transform: rotate(-135deg);
+    }
+
+    /* Dropdown - estilo Cartier */
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #ffffff;
+        min-width: 240px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        z-index: 1000;
+        margin-top: 0;
+        border-top: 2px solid #333;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .dropdown-content.show {
+        display: block;
+        animation: fadeInDown 0.3s ease;
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    /* Links dentro del dropdown */
+    .dropdown-content a {
+        color: #333;
+        padding: 14px 24px;
+        text-decoration: none;
+        display: block;
+        transition: all 0.2s ease;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        font-weight: 400;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    .dropdown-content a:last-child {
+        border-bottom: none;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #f9f9f9;
+        padding-left: 28px;
+        color: #000;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .category-menu {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-btn {
+            padding: 16px 20px;
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .category-menu-container {
+            border-bottom: none;
+        }
+
+        .category-menu {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 10px;
+        }
+
+        .category-btn {
+            width: 100%;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .category-btn::after {
+            display: none;
+        }
+
+        .all-products-btn {
+            margin-right: 0;
+            margin-bottom: 10px;
+        }
+
+        .dropdown-content {
+            position: static;
+            box-shadow: none;
+            border-top: none;
+            border-left: 2px solid #e5e5e5;
+            margin-left: 20px;
+            transform: none;
+        }
+
+        .dropdown-content.show {
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+    }
+</style>
+
+<div class="category-menu-container">
+    <div class="category-menu">
+        
+        
+        <div class="category-dropdown">
+            <button class="category-btn all-products-btn" onclick="window.location.href='/shop'">
+                TODOS LOS PRODUCTOS
+            </button>
+        </div>
+
+        
+        <div class="category-dropdown">
+            <button class="category-btn" onclick="toggleDropdown(this)">
+                BAÑO DE ORO
+                <span class="arrow"></span>
+            </button>
+            <div class="dropdown-content">
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/bano-de-oro-pulseras-5">Pulseras</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/bano-de-oro-aretes-6">Aretes</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/bano-de-oro-anillos-7">Anillos</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/bano-de-oro-cadenas-8">Cadenas</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/bano-de-oro-cadenas-con-dije-9">Cadenas con Dije</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/bano-de-oro-juegos-10">Juegos</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/bano-de-oro-tobilleras-11">Tobilleras</a>
+            </div>
+        </div>
+
+        
+        <div class="category-dropdown">
+            <button class="category-btn" onclick="toggleDropdown(this)">
+                ACERO
+                <span class="arrow"></span>
+            </button>
+            <div class="dropdown-content">
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-pulseras-12">Pulseras</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-aretes-13">Aretes</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-anillos-14">Anillos</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-cadenas-15">Cadenas</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-cadenas-con-dijes-16">Cadenas con Dijes</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-tobilleras-17">Tobilleras</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-rosarios-18">Rosarios</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-piercing-19">Piercing</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-juegos-20">Juegos</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/acero-dijes-21">Dijes</a>
+            </div>
+        </div>
+
+        
+        <div class="category-dropdown">
+            <button class="category-btn" onclick="toggleDropdown(this)">
+                PLATA
+                <span class="arrow"></span>
+            </button>
+            <div class="dropdown-content">
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-pulseras-22">Pulseras</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-anillos-23">Anillos</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-aretes-24">Aretes</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-cadenas-25">Cadenas</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-cadenas-con-dijes-26">Cadenas con Dijes</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-dijes-27">Dijes</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-juegos-28">Juegos</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-tobilleras-29">Tobilleras</a>
+                <a href="https://italsteeldistribuidora.odoo.com/shop/category/plata-rosarios-30">Rosarios</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleDropdown(button) {
+        // Cerrar todos los otros dropdowns
+        const allDropdowns = document.querySelectorAll('.dropdown-content');
+        const allButtons = document.querySelectorAll('.category-btn');
+        const currentDropdown = button.nextElementSibling;
+        
+        allDropdowns.forEach(dropdown => {
+            if (dropdown !== currentDropdown) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        allButtons.forEach(btn => {
+            if (btn !== button && !btn.classList.contains('all-products-btn')) {
+                btn.classList.remove('active');
+            }
+        });
+        
+        // Toggle del dropdown actual
+        currentDropdown.classList.toggle('show');
+        button.classList.toggle('active');
+    }
+
+    // Cerrar dropdowns al hacer clic fuera
+    window.onclick = function(event) {
+        if (!event.target.matches('.category-btn') && !event.target.matches('.arrow')) {
+            const dropdowns = document.querySelectorAll('.dropdown-content');
+            const buttons = document.querySelectorAll('.category-btn:not(.all-products-btn)');
+            
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+            
+            buttons.forEach(button => {
+                button.classList.remove('active');
+            });
+        }
+    }
+</script>

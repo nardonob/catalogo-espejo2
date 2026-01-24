@@ -8,18 +8,34 @@
 </head>
 <body>
     <header>
-        <nav class="navbar">
+        <div class="header-top">
             <a href="/" class="logo">CATÁLOGO</a>
-            <div class="nav-links">
-                <a href="/todos">TODOS</a>
-                {% for cat in categories.parents %}
-                <a href="/categoria/{{ cat.id }}">{{ cat.name|upper }}</a>
-                {% endfor %}
-            </div>
             <form action="/buscar" method="get" class="search-form">
                 <input type="text" name="q" placeholder="Buscar..." class="search-input">
                 <button type="submit" class="search-btn">🔍</button>
             </form>
+        </div>
+        
+        <nav class="category-menu-container">
+            <div class="category-menu">
+                <div class="category-dropdown">
+                    <a href="/todos" class="category-btn all-products-btn">TODOS LOS PRODUCTOS</a>
+                </div>
+                
+                {% for parent in categories.parents %}
+                <div class="category-dropdown">
+                    <button class="category-btn" onclick="toggleDropdown(this)">
+                        {{ parent.name|upper }}
+                        <span class="arrow"></span>
+                    </button>
+                    <div class="dropdown-content">
+                        {% for child in categories.children[parent.id] %}
+                        <a href="/categoria/{{ parent.id }}?sub={{ child.id }}">{{ child.name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </nav>
     </header>
 
@@ -29,31 +45,9 @@
             <p class="subtitle">{{ stats.total_products }} PRODUCTOS DISPONIBLES</p>
         </section>
 
-        {% if categories.parents %}
-        <section class="categories-grid">
-            {% for cat in categories.parents %}
-            <a href="/categoria/{{ cat.id }}" class="category-card">
-                <h3>{{ cat.name }}</h3>
-                {% if categories.children[cat.id] %}
-                <p class="subcats">
-                    {{ categories.children[cat.id]|length }} subcategorías
-                </p>
-                {% endif %}
-            </a>
-            {% endfor %}
-        </section>
-        {% else %}
-        <section class="no-data">
-            <div class="no-data-icon">📦</div>
-            <p>No hay categorías disponibles.</p>
-            <p>Ejecuta la sincronización inicial.</p>
-            <button onclick="syncCatalog()" class="sync-btn">Sincronizar ahora</button>
-        </section>
-        {% endif %}
-
         {% if products %}
         <section class="products-section">
-            <h2>Productos destacados</h2>
+            <h2>Últimos productos</h2>
             <div class="products-grid">
                 {% for product in products %}
                 <div class="product-card">
@@ -80,6 +74,13 @@
                 <a href="/todos" class="btn">Ver todos los productos →</a>
             </div>
         </section>
+        {% else %}
+        <section class="no-data">
+            <div class="no-data-icon">📦</div>
+            <p>No hay productos disponibles.</p>
+            <p>Ejecuta la sincronización inicial.</p>
+            <button onclick="syncCatalog()" class="sync-btn">Sincronizar ahora</button>
+        </section>
         {% endif %}
     </main>
 
@@ -88,23 +89,43 @@
     </footer>
 
     <script>
+        function toggleDropdown(button) {
+            const allDropdowns = document.querySelectorAll('.dropdown-content');
+            const allButtons = document.querySelectorAll('.category-btn');
+            const currentDropdown = button.nextElementSibling;
+            
+            allDropdowns.forEach(dropdown => {
+                if (dropdown !== currentDropdown) dropdown.classList.remove('show');
+            });
+            allButtons.forEach(btn => {
+                if (btn !== button && !btn.classList.contains('all-products-btn')) {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            currentDropdown.classList.toggle('show');
+            button.classList.toggle('active');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.category-btn') && !event.target.matches('.arrow')) {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                document.querySelectorAll('.category-btn:not(.all-products-btn)').forEach(b => b.classList.remove('active'));
+            }
+        }
+
         async function syncCatalog() {
             const btn = event.target;
             btn.disabled = true;
             btn.textContent = 'Sincronizando...';
-            
             try {
                 const res = await fetch('/api/sync', { method: 'POST' });
                 const data = await res.json();
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
+                if (data.success) location.reload();
+                else alert('Error: ' + data.message);
             } catch (e) {
                 alert('Error de conexión');
             }
-            
             btn.disabled = false;
             btn.textContent = 'Sincronizar ahora';
         }

@@ -8,20 +8,37 @@
 </head>
 <body>
     <header>
-        <nav class="navbar">
+        <div class="header-top">
             <a href="/" class="logo">CATÁLOGO</a>
-            <div class="nav-links">
-                <a href="/todos">TODOS</a>
-                {% for cat in categories.parents %}
-                <a href="/categoria/{{ cat.id }}" {% if cat.id == category.id %}class="active"{% endif %}>
-                    {{ cat.name|upper }}
-                </a>
-                {% endfor %}
-            </div>
             <form action="/buscar" method="get" class="search-form">
                 <input type="text" name="q" placeholder="Buscar..." class="search-input">
                 <button type="submit" class="search-btn">🔍</button>
             </form>
+        </div>
+        
+        <nav class="category-menu-container">
+            <div class="category-menu">
+                <div class="category-dropdown">
+                    <a href="/todos" class="category-btn all-products-btn">TODOS LOS PRODUCTOS</a>
+                </div>
+                
+                {% for parent in categories.parents %}
+                <div class="category-dropdown">
+                    <button class="category-btn {% if parent.id == category.id or (category.parent_id and parent.id == category.parent_id) %}active{% endif %}" onclick="toggleDropdown(this)">
+                        {{ parent.name|upper }}
+                        <span class="arrow"></span>
+                    </button>
+                    <div class="dropdown-content">
+                        {% for child in categories.children[parent.id] %}
+                        <a href="/categoria/{{ parent.id }}?sub={{ child.id }}" 
+                           {% if active_sub and active_sub.id == child.id %}class="active"{% endif %}>
+                            {{ child.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </nav>
     </header>
 
@@ -30,25 +47,21 @@
             <nav class="breadcrumb">
                 <a href="/">Inicio</a>
                 <span>/</span>
-                <a href="/categoria/{{ category.id }}">{{ category.name }}</a>
-                {% if active_sub %}
+                {% if category.parent_id %}
+                <a href="/categoria/{{ category.parent_id }}">{{ category.parent_name }}</a>
                 <span>/</span>
-                <span>{{ active_sub.name }}</span>
                 {% endif %}
+                <span>{{ active_sub.name if active_sub else category.name }}</span>
             </nav>
             
             <h1>{{ active_sub.name if active_sub else category.name }}</h1>
             <p class="subtitle">{{ total_products }} productos</p>
         </section>
 
-        {% if subcategories %}
+        {% if subcategories and not active_sub %}
         <section class="subcategories">
-            <a href="/categoria/{{ category.id }}" class="subcat-btn {% if not active_sub %}active{% endif %}">
-                Todos
-            </a>
             {% for sub in subcategories %}
-            <a href="/categoria/{{ category.id }}?sub={{ sub.id }}" 
-               class="subcat-btn {% if active_sub and active_sub.id == sub.id %}active{% endif %}">
+            <a href="/categoria/{{ category.id }}?sub={{ sub.id }}" class="subcat-btn">
                 {{ sub.name }}
             </a>
             {% endfor %}
@@ -89,5 +102,32 @@
     <footer>
         <p>Catálogo</p>
     </footer>
+
+    <script>
+        function toggleDropdown(button) {
+            const allDropdowns = document.querySelectorAll('.dropdown-content');
+            const allButtons = document.querySelectorAll('.category-btn');
+            const currentDropdown = button.nextElementSibling;
+            
+            allDropdowns.forEach(dropdown => {
+                if (dropdown !== currentDropdown) dropdown.classList.remove('show');
+            });
+            allButtons.forEach(btn => {
+                if (btn !== button && !btn.classList.contains('all-products-btn')) {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            currentDropdown.classList.toggle('show');
+            button.classList.toggle('active');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.category-btn') && !event.target.matches('.arrow')) {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                document.querySelectorAll('.category-btn:not(.all-products-btn)').forEach(b => b.classList.remove('active'));
+            }
+        }
+    </script>
 </body>
 </html>

@@ -8,18 +8,34 @@
 </head>
 <body>
     <header>
-        <nav class="navbar">
+        <div class="header-top">
             <a href="/" class="logo">CATÁLOGO</a>
-            <div class="nav-links">
-                <a href="/todos" class="active">TODOS</a>
-                {% for cat in categories.parents %}
-                <a href="/categoria/{{ cat.id }}">{{ cat.name|upper }}</a>
-                {% endfor %}
-            </div>
             <form action="/buscar" method="get" class="search-form">
                 <input type="text" name="q" placeholder="Buscar..." class="search-input">
                 <button type="submit" class="search-btn">🔍</button>
             </form>
+        </div>
+        
+        <nav class="category-menu-container">
+            <div class="category-menu">
+                <div class="category-dropdown">
+                    <a href="/todos" class="category-btn all-products-btn active">TODOS LOS PRODUCTOS</a>
+                </div>
+                
+                {% for parent in categories.parents %}
+                <div class="category-dropdown">
+                    <button class="category-btn" onclick="toggleDropdown(this)">
+                        {{ parent.name|upper }}
+                        <span class="arrow"></span>
+                    </button>
+                    <div class="dropdown-content">
+                        {% for child in categories.children[parent.id] %}
+                        <a href="/categoria/{{ parent.id }}?sub={{ child.id }}">{{ child.name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </nav>
     </header>
 
@@ -56,7 +72,6 @@
         <section class="no-data">
             <div class="no-data-icon">📦</div>
             <p>No hay productos disponibles.</p>
-            <p>Ejecuta la sincronización inicial.</p>
         </section>
         {% endif %}
     </main>
@@ -64,5 +79,32 @@
     <footer>
         <p>Catálogo</p>
     </footer>
+
+    <script>
+        function toggleDropdown(button) {
+            const allDropdowns = document.querySelectorAll('.dropdown-content');
+            const allButtons = document.querySelectorAll('.category-btn');
+            const currentDropdown = button.nextElementSibling;
+            
+            allDropdowns.forEach(dropdown => {
+                if (dropdown !== currentDropdown) dropdown.classList.remove('show');
+            });
+            allButtons.forEach(btn => {
+                if (btn !== button && !btn.classList.contains('all-products-btn')) {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            currentDropdown.classList.toggle('show');
+            button.classList.toggle('active');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.category-btn') && !event.target.matches('.arrow')) {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                document.querySelectorAll('.category-btn:not(.all-products-btn)').forEach(b => b.classList.remove('active'));
+            }
+        }
+    </script>
 </body>
 </html>
