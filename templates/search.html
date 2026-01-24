@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar: {{ query }} - Catálogo</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <a href="/" class="logo">CATÁLOGO</a>
+            <div class="nav-links">
+                <a href="/todos">TODOS</a>
+                {% for cat in categories.parents %}
+                <a href="/categoria/{{ cat.id }}">{{ cat.name|upper }}</a>
+                {% endfor %}
+            </div>
+            <form action="/buscar" method="get" class="search-form">
+                <input type="text" name="q" value="{{ query }}" placeholder="Buscar..." class="search-input">
+                <button type="submit" class="search-btn">🔍</button>
+            </form>
+        </nav>
+    </header>
+
+    <main>
+        <section class="category-header">
+            <h1>Resultados de búsqueda</h1>
+            {% if query %}
+            <p class="subtitle">{{ total_products }} resultados para "{{ query }}"</p>
+            {% else %}
+            <p class="subtitle">Ingresa un término de búsqueda</p>
+            {% endif %}
+        </section>
+
+        {% if products %}
+        <section class="products-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <div class="product-image">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
+                    {% else %}
+                    <div class="no-image">📷</div>
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h4>{{ product.name }}</h4>
+                    {% if product.code %}
+                    <p class="product-code">{{ product.code }}</p>
+                    {% endif %}
+                    {% if product.price > 0 %}
+                    <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% elif query %}
+        <section class="no-data">
+            <div class="no-data-icon">🔍</div>
+            <p>No se encontraron productos para "{{ query }}"</p>
+            <a href="/todos" class="btn">Ver todos los productos</a>
+        </section>
+        {% endif %}
+    </main>
+
+    <footer>
+        <p>Catálogo</p>
+    </footer>
+</body>
+</html>
