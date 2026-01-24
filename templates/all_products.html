@@ -62,7 +62,7 @@
                     <p class="product-code">{{ product.code }}</p>
                     {% endif %}
                     {% if product.price > 0 %}
-                    <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
+                    <p class="product-price">IS{{ "%04d"|format((product.price * 100)|int) }}</p>
                     {% endif %}
                 </div>
             </div>
