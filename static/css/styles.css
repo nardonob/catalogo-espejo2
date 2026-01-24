@@ -323,6 +323,10 @@ main {
     border-radius: 8px;
     overflow: hidden;
     transition: all 0.2s;
+    cursor: pointer;
+    height: fit-content; /* AÑADE ESTO */
+    display: flex; /* AÑADE ESTO */
+    flex-direction: column; /* AÑADE ESTO */
 }
 
 .product-card:hover {
