@@ -71,7 +71,7 @@
         {% if products %}
         <section class="products-grid">
             {% for product in products %}
-            <div class="product-card">
+            <div class="product-card" onclick="openModal('{{ product.image_url }}', '{{ product.name }}', '{{ product.code }}', 'IS{{ "%04d"|format((product.price * 100)|int) }}')"
                 <div class="product-image">
                     {% if product.image_url %}
                     <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
@@ -103,6 +103,20 @@
         <p>Catálogo</p>
     </footer>
 
+    <div id="productModal" class="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div class="modal-image">
+                <img id="modalImage" src="" alt="">
+            </div>
+            <div class="modal-info">
+                <h3 id="modalName"></h3>
+                <p id="modalCode" class="product-code"></p>
+                <p id="modalPrice" class="product-price"></p>
+            </div>
+        </div>
+    </div>
+
     <script>
         function toggleDropdown(button) {
             const allDropdowns = document.querySelectorAll('.dropdown-content');
@@ -128,6 +142,26 @@
                 document.querySelectorAll('.category-btn:not(.all-products-btn)').forEach(b => b.classList.remove('active'));
             }
         }
+
+        function openModal(image, name, code, price) {
+            document.getElementById('modalImage').src = image || '';
+            document.getElementById('modalName').textContent = name;
+            document.getElementById('modalCode').textContent = code || '';
+            document.getElementById('modalPrice').textContent = price;
+            document.getElementById('productModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(event) {
+            if (!event || event.target.classList.contains('modal')) {
+                document.getElementById('productModal').classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
     </script>
 </body>
 </html>
