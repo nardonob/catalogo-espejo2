@@ -66,6 +66,9 @@ header {
     background-color: #ffffff;
     border-bottom: 1px solid #e5e5e5;
     box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    position: relative;
+    z-index: 100;
+    overflow: visible;
 }
 
 .category-menu {
@@ -76,11 +79,13 @@ header {
     gap: 0;
     justify-content: center;
     align-items: center;
+    overflow: visible;
 }
 
 .category-dropdown {
     position: relative;
     display: inline-block;
+    z-index: 100;
 }
 
 .category-btn {
@@ -166,7 +171,7 @@ header {
     background-color: #ffffff;
     min-width: 240px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    z-index: 1000;
+    z-index: 9999;
     margin-top: 0;
     border-top: 2px solid #333;
     left: 50%;
