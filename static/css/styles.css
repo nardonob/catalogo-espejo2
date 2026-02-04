@@ -310,26 +310,19 @@ main {
     text-align: center;
 }
 
-/* Products grid - CORREGIDO */
+/* Products grid - RESPONSIVO */
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1.5rem;
-    width: 100%;
 }
 
-/* Product card - ESTRUCTURA CORREGIDA */
 .product-card {
     background: white;
     border: 1px solid #eee;
     border-radius: 8px;
     overflow: hidden;
     transition: all 0.2s;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    min-height: 0;
 }
 
 .product-card:hover {
@@ -337,17 +330,13 @@ main {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* Product image - PROPORCIÓN FIJA */
 .product-image {
-    width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1;
     background: #f8f8f8;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
 }
 
 .product-image img {
@@ -355,7 +344,6 @@ main {
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s;
-    display: block;
 }
 
 .product-card:hover .product-image img {
@@ -367,19 +355,14 @@ main {
     color: #ddd;
 }
 
-/* Product info - SIEMPRE DEBAJO */
 .product-info {
     padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex-shrink: 0;
 }
 
 .product-info h4 {
     font-weight: 400;
     font-size: 0.9rem;
-    margin: 0;
+    margin-bottom: 0.25rem;
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -390,14 +373,19 @@ main {
 .product-code {
     color: #888;
     font-size: 0.75rem;
-    margin: 0;
+    margin-bottom: 0.25rem;
+}
+
+.product-qty {
+    color: #888;
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
 }
 
 .product-price {
     font-weight: 600;
     color: #333;
     font-size: 1rem;
-    margin: 0;
 }
 
 /* View all */
@@ -468,10 +456,6 @@ footer {
         padding: 16px 20px;
         font-size: 12px;
     }
-    
-    .products-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
 }
 
 @media (max-width: 768px) {
@@ -530,7 +514,7 @@ footer {
         letter-spacing: 0.2em;
     }
     
-    /* Grid 2 columnas en móvil */
+    /* Grid 2 columnas en tablet/móvil */
     .products-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
@@ -664,4 +648,8 @@ footer {
     font-size: 1.2rem;
     font-weight: 600;
     color: #333;
+}
+
+.product-card {
+    cursor: pointer;
 }

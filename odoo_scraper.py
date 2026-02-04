@@ -141,34 +141,82 @@ class OdooScraper:
         
         return hierarchy
     
-    def get_products_from_page(self, url: str) -> tuple[list, Optional[str]]:
+    def get_products_from_page(self, url: str) -> tuple[list, Optional[str], int]:
+        """
+        Obtener productos de una página del shop
+        Retorna: (lista_productos, url_siguiente_pagina, total_productos)
+        """
         products = []
         next_page = None
+        total = 0
         
         soup = self._get_soup(url)
         if not soup:
-            return products, next_page
+            return products, next_page, total
         
+        # Obtener total de productos de la página
+        total_el = soup.select_one('.o_wsale_products_count, .products_pager strong, .text-muted')
+        if total_el:
+            total_text = total_el.get_text()
+            match = re.search(r'(\d+)\s*producto', total_text, re.IGNORECASE)
+            if match:
+                total = int(match.group(1))
+        
+        # Buscar todos los formularios de producto (estructura Odoo estándar)
         product_forms = soup.select('form[action*="/shop/cart/update"]')
         
         for form in product_forms:
             try:
-                product = self._parse_product_form(form)
+                product = self._parse_product_form(form, soup)
                 if product:
                     products.append(product)
             except Exception as e:
                 print(f"  Error parseando producto: {e}")
                 continue
         
-        next_link = soup.select_one('.pagination a[rel="next"], a.page-link[rel="next"]')
+        # Buscar paginación - múltiples selectores
+        # Método 1: Link directo "Next" o "Siguiente"
+        next_link = soup.select_one('.pagination a[rel="next"], a.page-link[rel="next"], .pagination .next a')
         if next_link:
             next_href = next_link.get('href')
             if next_href:
                 next_page = urljoin(self.base_url, next_href)
         
-        return products, next_page
+        # Método 2: Si no hay link next, buscar por número de página
+        if not next_page:
+            current_page = 1
+            # Detectar página actual
+            active_page = soup.select_one('.pagination .active a, .pagination .active span')
+            if active_page:
+                try:
+                    current_page = int(active_page.get_text(strip=True))
+                except:
+                    pass
+            
+            # Buscar si hay más páginas
+            page_links = soup.select('.pagination a[href*="page="], .pagination a.page-link')
+            max_page = current_page
+            for link in page_links:
+                href = link.get('href', '')
+                page_match = re.search(r'page[=/-](\d+)', href)
+                if page_match:
+                    page_num = int(page_match.group(1))
+                    if page_num > max_page:
+                        max_page = page_num
+            
+            if max_page > current_page:
+                # Construir URL de siguiente página
+                if '?' in url:
+                    if 'page=' in url:
+                        next_page = re.sub(r'page=\d+', f'page={current_page + 1}', url)
+                    else:
+                        next_page = f"{url}&page={current_page + 1}"
+                else:
+                    next_page = f"{url}?page={current_page + 1}"
+        
+        return products, next_page, total
     
-    def _parse_product_form(self, form) -> Optional[dict]:
+    def _parse_product_form(self, form, soup=None) -> Optional[dict]:
         container = form.find_parent('div', class_='oe_product') or form.find_parent('td') or form
         
         link = container.select_one('a[href*="/shop/"]')
@@ -212,9 +260,19 @@ class OdooScraper:
         code = ""
         for el in container.select('small, .text-muted, span'):
             text = el.get_text(strip=True)
-            if re.match(r'^[A-Z]{2,3}-?[A-Z0-9]+$', text, re.IGNORECASE):
+            if re.match(r'^[A-Z]{1,3}-?[A-Z0-9]+$', text, re.IGNORECASE):
                 code = text
                 break
+        
+        # Cantidad disponible - buscar en el contenedor o en atributos
+        qty_available = 0
+        # Intentar obtener de data attributes
+        qty_el = container.select_one('[data-qty-available], .availability')
+        if qty_el:
+            qty_text = qty_el.get('data-qty-available') or qty_el.get_text(strip=True)
+            qty_match = re.search(r'(\d+)', str(qty_text))
+            if qty_match:
+                qty_available = int(qty_match.group(1))
         
         return {
             "id": product_id,
@@ -222,21 +280,51 @@ class OdooScraper:
             "code": code,
             "price": price,
             "image_url": image_url,
-            "product_url": urljoin(self.base_url, href)
+            "product_url": urljoin(self.base_url, href),
+            "qty_available": qty_available
         }
     
     def get_all_products(self, category_url: Optional[str] = None) -> list:
         all_products = []
         url = category_url or self.shop_url
         page = 1
+        total_expected = 0
         
         while url:
             print(f"    Página {page}...")
-            products, next_url = self.get_products_from_page(url)
+            products, next_url, total = self.get_products_from_page(url)
+            
+            if total > 0 and total_expected == 0:
+                total_expected = total
+                print(f"    (Total esperado: {total_expected})")
+            
             all_products.extend(products)
+            
+            # Si ya tenemos todos los productos esperados, parar
+            if total_expected > 0 and len(all_products) >= total_expected:
+                break
+            
+            # Si no hay productos nuevos en esta página, intentar forzar siguiente
+            if not products and page < 50:
+                # Intentar construir URL de siguiente página manualmente
+                base = category_url or self.shop_url
+                if '?' in base:
+                    next_url = f"{base}&page={page + 1}"
+                else:
+                    next_url = f"{base}?page={page + 1}"
+                
+                # Verificar si hay productos en esa página
+                test_products, _, _ = self.get_products_from_page(next_url)
+                if not test_products:
+                    break  # No hay más productos
+                products = test_products
+                all_products.extend(products)
+            
             url = next_url
             page += 1
+            
             if page > 100:
+                print("    ⚠ Límite de páginas alcanzado")
                 break
         
         return all_products

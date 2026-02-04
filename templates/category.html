@@ -84,6 +84,7 @@
                     {% if product.code %}
                     <p class="product-code">{{ product.code }}</p>
                     {% endif %}
+                    <p class="product-qty">{{ product.qty_available }} disponibles</p>
                     {% if product.price > 0 %}
                     <p class="product-price">IS{{ "%04d"|format((product.price * 100)|int) }}</p>
                     {% endif %}
