@@ -235,16 +235,17 @@ class OdooScraper:
         name = name_el.get_text(strip=True) if name_el else link.get_text(strip=True)
         name = re.sub(r'\s+', ' ', name).strip() or "Sin nombre"
         
-        # Precio - FIX: el precio viene multiplicado por 100 en el HTML
+        # Precio - manejar formato español (coma como decimal) e inglés (punto)
         price = 0.0
         price_el = container.select_one('.oe_currency_value')
         if price_el:
             price_text = price_el.get_text(strip=True)
+            # Reemplazar coma por punto para decimales
+            price_text = price_text.replace(',', '.')
+            # Limpiar todo excepto números y punto
             price_clean = re.sub(r'[^\d.]', '', price_text)
             try:
-                raw_price = float(price_clean) if price_clean else 0.0
-                # Dividir entre 100 para obtener precio real
-                price = raw_price / 100.0
+                price = float(price_clean) if price_clean else 0.0
             except:
                 price = 0.0
         
@@ -256,13 +257,40 @@ class OdooScraper:
             if image_url and not image_url.startswith('http'):
                 image_url = urljoin(self.base_url, image_url)
         
-        # Código
+        # Código - extraer de múltiples fuentes
         code = ""
-        for el in container.select('small, .text-muted, span'):
-            text = el.get_text(strip=True)
-            if re.match(r'^[A-Z]{1,3}-?[A-Z0-9]+$', text, re.IGNORECASE):
-                code = text
-                break
+        
+        # Método 1: Buscar en la URL de la imagen (formato [CODIGO] en el nombre)
+        img_el = container.select_one('img[src*="/web/image"]')
+        if img_el:
+            img_src = img_el.get('src', '')
+            # Buscar patrón [XX-XX-000] en la URL de la imagen
+            code_match = re.search(r'\[([A-Z]{1,3}-[A-Z]{1,3}-\d+)\]', img_src, re.IGNORECASE)
+            if code_match:
+                code = code_match.group(1).upper()
+        
+        # Método 2: Buscar en el nombre del producto
+        if not code and name:
+            code_match = re.search(r'\[([A-Z]{1,3}-[A-Z]{1,3}-\d+)\]', name, re.IGNORECASE)
+            if code_match:
+                code = code_match.group(1).upper()
+                # Limpiar el nombre quitando el código
+                name = re.sub(r'\s*\[[A-Z]{1,3}-[A-Z]{1,3}-\d+\]\s*', ' ', name).strip()
+        
+        # Método 3: Buscar en href del producto
+        if not code and href:
+            # El slug puede tener el código: /shop/ac-ar-206-arete-largo...
+            slug_match = re.search(r'/shop/([a-z]{1,3}-[a-z]{1,3}-\d+)-', href, re.IGNORECASE)
+            if slug_match:
+                code = slug_match.group(1).upper()
+        
+        # Método 4: Buscar en elementos de texto (fallback)
+        if not code:
+            for el in container.select('small, .text-muted, span'):
+                text = el.get_text(strip=True)
+                if re.match(r'^[A-Z]{1,3}-[A-Z]{1,3}-\d+$', text, re.IGNORECASE):
+                    code = text.upper()
+                    break
         
         # Cantidad disponible - buscar en el contenedor o en atributos
         qty_available = 0
