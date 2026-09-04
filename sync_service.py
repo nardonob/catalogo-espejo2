@@ -2,6 +2,9 @@
 Servicio de sincronización mediante web scraping
 """
 import json
+import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from odoo_scraper import odoo_scraper
@@ -9,6 +12,8 @@ import time
 
 DATA_DIR = Path("data")
 IMAGES_DIR = Path("static/images/products")
+IMAGE_WORKERS = max(1, int(os.getenv("SYNC_IMAGE_WORKERS", 8)))
+SYNC_LOCK = threading.Lock()
 
 
 def ensure_directories():
@@ -17,6 +22,18 @@ def ensure_directories():
 
 
 def sync_catalog():
+    """Evitar que el scheduler, el arranque y la ruta manual se solapen."""
+    if not SYNC_LOCK.acquire(blocking=False):
+        print("⚠ Ya hay una sincronización en curso")
+        return False
+
+    try:
+        return _sync_catalog()
+    finally:
+        SYNC_LOCK.release()
+
+
+def _sync_catalog():
     """Sincronizar catálogo completo desde Odoo mediante scraping"""
     print(f"\n{'='*50}")
     print(f"Iniciando sincronización: {datetime.now().isoformat()}")
@@ -58,28 +75,6 @@ def sync_catalog():
 
                     if prod_id not in seen_product_ids:
                         prod['category_ids'] = [cat_id, parent_id]
-
-                        remote_images = odoo_scraper.get_product_images(
-                            prod.get('product_url', ''),
-                            prod.get('image_url', '')
-                        )
-                        local_images = []
-                        for image_index, image_url in enumerate(remote_images):
-                            local_image = odoo_scraper.download_image(
-                                image_url,
-                                prod_id,
-                                image_index
-                            )
-                            if local_image and local_image not in local_images:
-                                local_images.append(local_image)
-
-                        # Mantener image_url para compatibilidad con el catálogo actual.
-                        if local_images:
-                            prod['images'] = local_images
-                            prod['image_url'] = local_images[0]
-                        else:
-                            prod['images'] = [prod['image_url']] if prod.get('image_url') else []
-
                         seen_product_ids.add(prod_id)
                         products_cache[prod_id] = prod
                         all_products.append(prod)
@@ -94,6 +89,39 @@ def sync_catalog():
                 
                 print(f"      {len(products)} productos")
                 time.sleep(0.3)
+
+        print(f"\n→ Descargando galerías con {IMAGE_WORKERS} procesos paralelos...")
+
+        def enrich_product_images(prod):
+            try:
+                remote_images = odoo_scraper.get_product_images(
+                    prod.get('product_url', ''),
+                    prod.get('image_url', '')
+                )
+                local_images = []
+                for image_index, image_url in enumerate(remote_images):
+                    local_image = odoo_scraper.download_image(
+                        image_url,
+                        prod['id'],
+                        image_index
+                    )
+                    if local_image and local_image not in local_images:
+                        local_images.append(local_image)
+
+                # Mantener image_url para compatibilidad con el catálogo actual.
+                if local_images:
+                    prod['images'] = local_images
+                    prod['image_url'] = local_images[0]
+                else:
+                    prod['images'] = [prod['image_url']] if prod.get('image_url') else []
+            except Exception as e:
+                print(f"  Error obteniendo galería del producto {prod['id']}: {e}")
+                prod['images'] = [prod['image_url']] if prod.get('image_url') else []
+
+        with ThreadPoolExecutor(max_workers=IMAGE_WORKERS) as executor:
+            for completed, _ in enumerate(executor.map(enrich_product_images, all_products), 1):
+                if completed % 100 == 0 or completed == len(all_products):
+                    print(f"  Galerías procesadas: {completed}/{len(all_products)}")
         
         # Ordenar productos por ID descendente (más recientes primero)
         all_products.sort(key=lambda x: x['id'], reverse=True)

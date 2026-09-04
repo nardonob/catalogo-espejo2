@@ -1,6 +1,7 @@
 import os
+import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import BackgroundTasks, FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -20,6 +21,7 @@ scheduler = AsyncIOScheduler()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("🚀 Iniciando Catálogo Espejo...")
+    startup_sync_task = None
     
     Path("static/images/products").mkdir(parents=True, exist_ok=True)
     Path("static/css").mkdir(parents=True, exist_ok=True)
@@ -27,8 +29,8 @@ async def lifespan(app: FastAPI):
     
     catalog = load_catalog()
     if not catalog.get("last_sync") or catalog.get("stats", {}).get("total_products", 0) == 0:
-        print("📦 Primera ejecución - sincronizando catálogo...")
-        sync_catalog()
+        print("📦 Primera ejecución - sincronización iniciada en segundo plano...")
+        startup_sync_task = asyncio.create_task(asyncio.to_thread(sync_catalog))
     
     scheduler.add_job(
         sync_catalog,
@@ -40,7 +42,9 @@ async def lifespan(app: FastAPI):
     print(f"⏰ Sincronización programada cada {SYNC_INTERVAL} horas")
     
     yield
-    
+
+    if startup_sync_task and not startup_sync_task.done():
+        startup_sync_task.cancel()
     scheduler.shutdown()
 
 
@@ -133,9 +137,9 @@ async def search(request: Request, q: str = ""):
 
 
 @app.post("/api/sync")
-async def manual_sync():
-    success = sync_catalog()
-    return {"success": success, "message": "Sincronización completada" if success else "Error"}
+async def manual_sync(background_tasks: BackgroundTasks):
+    background_tasks.add_task(sync_catalog)
+    return {"success": True, "message": "Sincronización iniciada"}
 
 
 @app.get("/api/stats")
