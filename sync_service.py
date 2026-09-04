@@ -38,6 +38,7 @@ def sync_catalog():
         all_products = []
         products_by_category = {}
         seen_product_ids = set()
+        products_cache = {}
         
         # Recorrer todas las subcategorías
         for parent_id, children in category_tree["children"].items():
@@ -54,23 +55,41 @@ def sync_catalog():
                 
                 for prod in products:
                     prod_id = prod['id']
-                    
-                    if 'category_ids' not in prod:
-                        prod['category_ids'] = []
-                    if cat_id not in prod['category_ids']:
-                        prod['category_ids'].append(cat_id)
-                    if parent_id not in prod['category_ids']:
-                        prod['category_ids'].append(parent_id)
-                    
-                    # Descargar imagen si es nuevo
-                    if prod.get('image_url') and prod_id not in seen_product_ids:
-                        local_image = odoo_scraper.download_image(prod['image_url'], prod_id)
-                        prod['image_url'] = local_image
-                    
+
                     if prod_id not in seen_product_ids:
+                        prod['category_ids'] = [cat_id, parent_id]
+
+                        remote_images = odoo_scraper.get_product_images(
+                            prod.get('product_url', ''),
+                            prod.get('image_url', '')
+                        )
+                        local_images = []
+                        for image_index, image_url in enumerate(remote_images):
+                            local_image = odoo_scraper.download_image(
+                                image_url,
+                                prod_id,
+                                image_index
+                            )
+                            if local_image and local_image not in local_images:
+                                local_images.append(local_image)
+
+                        # Mantener image_url para compatibilidad con el catálogo actual.
+                        if local_images:
+                            prod['images'] = local_images
+                            prod['image_url'] = local_images[0]
+                        else:
+                            prod['images'] = [prod['image_url']] if prod.get('image_url') else []
+
                         seen_product_ids.add(prod_id)
+                        products_cache[prod_id] = prod
                         all_products.append(prod)
-                    
+                    else:
+                        prod = products_cache[prod_id]
+                        if cat_id not in prod['category_ids']:
+                            prod['category_ids'].append(cat_id)
+                        if parent_id not in prod['category_ids']:
+                            prod['category_ids'].append(parent_id)
+
                     products_by_category[cat_id].append(prod)
                 
                 print(f"      {len(products)} productos")

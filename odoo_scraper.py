@@ -359,8 +359,31 @@ class OdooScraper:
     
     def get_products_by_category(self, category_id: int, category_url: str) -> list:
         return self.get_all_products(category_url)
+
+    def get_product_images(self, product_url: str, fallback_url: str = "") -> list[str]:
+        """Obtener las imágenes del carrusel público de la ficha del producto."""
+        images = []
+        soup = self._get_soup(product_url)
+
+        if soup:
+            # Odoo publica las imágenes grandes del carrusel con esta clase.
+            # No se incluyen las miniaturas image_128 para evitar duplicados.
+            for img in soup.select('img.product_detail_img[src*="/web/image"]'):
+                src = img.get('src', '')
+                if not src:
+                    continue
+
+                image_url = urljoin(self.base_url, src)
+                if image_url not in images:
+                    images.append(image_url)
+
+        # Si la ficha falla o no tiene carrusel, conservar la imagen del listado.
+        if not images and fallback_url:
+            images.append(urljoin(self.base_url, fallback_url))
+
+        return images
     
-    def download_image(self, image_url: str, product_id: int) -> str:
+    def download_image(self, image_url: str, product_id: int, image_index: int = 0) -> str:
         if not image_url:
             return ""
         try:
@@ -368,7 +391,8 @@ class OdooScraper:
             if response.status_code == 200:
                 content_type = response.headers.get('content-type', '')
                 ext = '.png' if 'png' in content_type else '.webp' if 'webp' in content_type else '.jpg'
-                filename = f"{product_id}{ext}"
+                suffix = "" if image_index == 0 else f"_{image_index}"
+                filename = f"{product_id}{suffix}{ext}"
                 filepath = f"static/images/products/{filename}"
                 with open(filepath, 'wb') as f:
                     f.write(response.content)
