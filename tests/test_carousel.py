@@ -110,6 +110,16 @@ class TemplateCompatibilityTest(unittest.TestCase):
                 html = self.environment.get_template(template_name).render(**context)
                 self.assertIn("/static/images/products/2_1.jpg", html)
                 self.assertIn("Arete d\\u0027Oro", html)
+                self.assertIn("styles.css?v=20260919-mobile-carousel", html)
+                self.assertIn("handleModalPointerDown", html)
+                self.assertIn("handleModalPointerUp", html)
+
+    def test_mobile_carousel_styles_are_present(self):
+        css = (PROJECT_DIR / "static" / "css" / "styles.css").read_text(encoding="utf-8")
+
+        self.assertIn("touch-action: pan-y", css)
+        self.assertIn("@media (max-width: 768px)", css)
+        self.assertIn(".modal-nav", css)
 
 
 if __name__ == "__main__":

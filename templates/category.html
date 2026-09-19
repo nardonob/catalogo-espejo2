@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ category.name }} - Catálogo</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/styles.css?v=20260919-mobile-carousel">
 </head>
 <body>
     <header>
@@ -105,7 +105,7 @@
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <div class="modal-image">
                 <button id="modalPrev" class="modal-nav modal-prev" onclick="changeModalImage(-1)" aria-label="Imagen anterior">&#10094;</button>
-                <img id="modalImage" src="" alt="">
+                <img id="modalImage" src="" alt="" draggable="false">
                 <button id="modalNext" class="modal-nav modal-next" onclick="changeModalImage(1)" aria-label="Imagen siguiente">&#10095;</button>
             </div>
             <div class="modal-info">
@@ -145,6 +145,9 @@
 
         let modalImages = [];
         let modalImageIndex = 0;
+        let modalPointerStartX = 0;
+        let modalPointerStartY = 0;
+        let modalPointerActive = false;
 
         function openModal(images, name, code) {
             modalImages = Array.isArray(images) ? images.filter(Boolean) : [images].filter(Boolean);
@@ -188,6 +191,30 @@
             modalImageIndex = index;
             renderModalImage();
         }
+
+        function handleModalPointerDown(event) {
+            if (modalImages.length < 2 || !event.isPrimary) return;
+            modalPointerStartX = event.clientX;
+            modalPointerStartY = event.clientY;
+            modalPointerActive = true;
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+        }
+
+        function handleModalPointerUp(event) {
+            if (!modalPointerActive || !event.isPrimary) return;
+            const distanceX = event.clientX - modalPointerStartX;
+            const distanceY = event.clientY - modalPointerStartY;
+            modalPointerActive = false;
+
+            if (Math.abs(distanceX) >= 45 && Math.abs(distanceX) > Math.abs(distanceY)) {
+                changeModalImage(distanceX < 0 ? 1 : -1);
+            }
+        }
+
+        const modalImageArea = document.querySelector('.modal-image');
+        modalImageArea.addEventListener('pointerdown', handleModalPointerDown);
+        modalImageArea.addEventListener('pointerup', handleModalPointerUp);
+        modalImageArea.addEventListener('pointercancel', () => { modalPointerActive = false; });
 
         function closeModal(event) {
             if (!event || event.target.classList.contains('modal')) {
