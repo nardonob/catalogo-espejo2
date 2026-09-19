@@ -110,8 +110,8 @@ class TemplateCompatibilityTest(unittest.TestCase):
                 html = self.environment.get_template(template_name).render(**context)
                 self.assertIn("/static/images/products/2_1.jpg", html)
                 self.assertIn("Arete d\\u0027Oro", html)
-                self.assertIn("styles.css?v=20260919-smart-header", html)
-                self.assertIn("header-scroll.js?v=20260919-smart-header", html)
+                self.assertIn("styles.css?v=20260919-menu-touch-fix", html)
+                self.assertIn("header-scroll.js?v=20260919-menu-touch-fix", html)
                 self.assertIn("handleModalPointerDown", html)
                 self.assertIn("handleModalPointerUp", html)
 
@@ -130,6 +130,8 @@ class TemplateCompatibilityTest(unittest.TestCase):
         self.assertIn("header.classList.add('header-hidden')", javascript)
         self.assertIn("header.classList.remove('header-hidden')", javascript)
         self.assertIn("{ passive: true }", javascript)
+        self.assertIn("ignoreScrollUntil", javascript)
+        self.assertIn("header.addEventListener('pointerdown'", javascript)
         self.assertIn("@media (max-width: 768px)", css)
         self.assertIn(".modal-nav", css)
 

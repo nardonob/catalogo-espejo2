@@ -4,8 +4,16 @@
 
     const movementThreshold = 8;
     const topThreshold = 20;
+    const interactionPause = 600;
     let lastScrollY = Math.max(window.scrollY, 0);
+    let ignoreScrollUntil = 0;
     let ticking = false;
+
+    function keepHeaderOpenDuringInteraction() {
+        header.classList.remove('header-hidden');
+        lastScrollY = Math.max(window.scrollY, 0);
+        ignoreScrollUntil = performance.now() + interactionPause;
+    }
 
     function closeCategoryMenus() {
         document.querySelectorAll('.dropdown-content.show').forEach((dropdown) => {
@@ -19,6 +27,12 @@
     function updateHeader() {
         const currentScrollY = Math.max(window.scrollY, 0);
         const movement = currentScrollY - lastScrollY;
+
+        if (performance.now() < ignoreScrollUntil) {
+            lastScrollY = currentScrollY;
+            ticking = false;
+            return;
+        }
 
         if (currentScrollY <= topThreshold) {
             header.classList.remove('header-hidden');
@@ -42,4 +56,7 @@
             ticking = true;
         }
     }, { passive: true });
+
+    header.addEventListener('pointerdown', keepHeaderOpenDuringInteraction, { passive: true });
+    header.addEventListener('click', keepHeaderOpenDuringInteraction);
 })();
