@@ -21,6 +21,18 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
+    transition: transform 0.28s ease;
+    will-change: transform;
+}
+
+header.header-hidden {
+    transform: translateY(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    header {
+        transition: none;
+    }
 }
 
 .header-top {

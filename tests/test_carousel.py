@@ -110,7 +110,8 @@ class TemplateCompatibilityTest(unittest.TestCase):
                 html = self.environment.get_template(template_name).render(**context)
                 self.assertIn("/static/images/products/2_1.jpg", html)
                 self.assertIn("Arete d\\u0027Oro", html)
-                self.assertIn("styles.css?v=20260919-mobile-carousel", html)
+                self.assertIn("styles.css?v=20260919-smart-header", html)
+                self.assertIn("header-scroll.js?v=20260919-smart-header", html)
                 self.assertIn("handleModalPointerDown", html)
                 self.assertIn("handleModalPointerUp", html)
 
@@ -118,6 +119,17 @@ class TemplateCompatibilityTest(unittest.TestCase):
         css = (PROJECT_DIR / "static" / "css" / "styles.css").read_text(encoding="utf-8")
 
         self.assertIn("touch-action: pan-y", css)
+
+    def test_header_hides_and_reappears_according_to_scroll_direction(self):
+        css = (PROJECT_DIR / "static" / "css" / "styles.css").read_text(encoding="utf-8")
+        javascript = (PROJECT_DIR / "static" / "js" / "header-scroll.js").read_text(encoding="utf-8")
+
+        self.assertIn("header.header-hidden", css)
+        self.assertIn("translateY(-100%)", css)
+        self.assertIn("movement > 0", javascript)
+        self.assertIn("header.classList.add('header-hidden')", javascript)
+        self.assertIn("header.classList.remove('header-hidden')", javascript)
+        self.assertIn("{ passive: true }", javascript)
         self.assertIn("@media (max-width: 768px)", css)
         self.assertIn(".modal-nav", css)
 
