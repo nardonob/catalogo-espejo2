@@ -12,7 +12,7 @@ from odoo_scraper import odoo_scraper
 
 DATA_DIR = Path(os.getenv("CATALOG_DATA_DIR", "data"))
 IMAGES_DIR = Path(os.getenv("CATALOG_IMAGES_DIR", "static/images/products"))
-IMAGE_WORKERS = max(1, int(os.getenv("SYNC_IMAGE_WORKERS", 8)))
+IMAGE_WORKERS = max(1, int(os.getenv("SYNC_IMAGE_WORKERS", 3)))
 SYNC_LOCK = threading.Lock()
 
 
@@ -138,6 +138,24 @@ def _sync_catalog():
             print("✗ Se conserva el catálogo anterior")
             return False
 
+        # Publicar inmediatamente el catálogo con las imágenes remotas del
+        # listado. La descarga de galerías puede tardar varios minutos y no
+        # debe mantener la web vacía durante la primera sincronización.
+        all_products.sort(key=lambda product: product["id"], reverse=True)
+        catalog_data = {
+            "last_sync": datetime.now().isoformat(),
+            "categories": category_tree,
+            "products": all_products,
+            "products_by_category": products_by_category,
+            "stats": {
+                "total_products": new_total,
+                "total_categories": total_categories,
+                "parent_categories": len(category_tree["parents"]),
+            },
+        }
+        save_catalog(catalog_data)
+        print(f"\n✓ Catálogo publicado inicialmente: {new_total} productos")
+
         print(f"\n→ Descargando galerías con {IMAGE_WORKERS} procesos paralelos...")
 
         def enrich_product_images(product):
@@ -174,21 +192,8 @@ def _sync_catalog():
                 if completed % 100 == 0 or completed == new_total:
                     print(f"  Galerías procesadas: {completed}/{new_total}")
 
-        all_products.sort(key=lambda product: product["id"], reverse=True)
         print(f"\n✓ Total productos encontrados: {new_total}")
-
-        catalog_data = {
-            "last_sync": datetime.now().isoformat(),
-            "categories": category_tree,
-            "products": all_products,
-            "products_by_category": products_by_category,
-            "stats": {
-                "total_products": new_total,
-                "total_categories": total_categories,
-                "parent_categories": len(category_tree["parents"]),
-            },
-        }
-
+        catalog_data["last_sync"] = datetime.now().isoformat()
         save_catalog(catalog_data)
         print("\n✓ Sincronización completada")
         print(f"  - Productos: {new_total}")
